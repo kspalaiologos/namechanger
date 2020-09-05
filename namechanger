@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# The script may fail if you have more than 1000 repositories.
+# Copyleft (C) 2020 Palaiologos. All wrongs reserved.
+
+# Dependencies:
+#  => git
+#  => jq
+
+USERNAME="kspalaiologos"
+
+FROM="REDACTED"
+TO="Kamila Szewczyk"
+
+# Don't change anything below.
+# ----------------------------
+
+  curl -sL "https://api.github.com/users/$USERNAME/repos?per_page=1000" \
+| jq -r '.[]|.clone_url' \
+| xargs -L1 git clone --depth 1
+
+for d in */; do
+    cd "$d"
+    
+    echo "Processing: $d"
+
+    find . \( -type d -name .git -prune \) -o -type f -print0 \
+  | xargs -0 sed -i 's/$FROM/$TO/g'
+
+    echo "Commiting changes."
+
+    git commit -am "[namechanger]: automatic"
+    git push
+
+    cd ..
+
+    rm -rf "$d"
+done
